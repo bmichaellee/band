@@ -4,7 +4,10 @@ import { Elysia } from "elysia";
 
 import { db } from "#db";
 
-export const healthRoutes = new Elysia({ name: "routes/health" }).get(
+export const healthRoutes = new Elysia({
+  name: "routes/health",
+  tags: ["Health"],
+}).get(
   "/health",
   async ({ status }) => {
     const started = performance.now();

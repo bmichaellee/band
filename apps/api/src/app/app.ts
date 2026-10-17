@@ -5,9 +5,14 @@ import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 
 import { healthRoutes } from "../routes/health";
+import { meRoutes } from "../routes/me";
+import { sessionRoutes } from "../routes/session";
 import { webApp } from "../web";
 
-const v0 = new Elysia({ prefix: "/v0" }).use(healthRoutes);
+const v0 = new Elysia({ prefix: "/v0" })
+  .use(healthRoutes)
+  .use(meRoutes)
+  .use(sessionRoutes);
 
 // Docs stay outside the version prefix: one URL for every version.
 const api = new Elysia({ prefix: "/api" })

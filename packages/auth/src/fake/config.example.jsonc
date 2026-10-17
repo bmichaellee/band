@@ -1,0 +1,10 @@
+// Settings for the fake auth providers, for local development only.
+// Copy this file to config.jsonc (gitignored) next to it and edit that copy;
+// any setting left out keeps its default. Restart the API to pick up changes.
+// Ignored under `bun test`, which always uses plain 302 redirects.
+{
+  // Seconds each redirect-login step shows a "redirecting…" page before moving
+  // on, standing in for an identity provider's screens. 0 skips the page and
+  // answers with a plain 302. Default: 0.
+  "redirectSeconds": 2
+}

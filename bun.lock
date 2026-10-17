@@ -42,6 +42,9 @@
     },
     "packages/auth": {
       "name": "@band-tools/auth",
+      "dependencies": {
+        "@band-tools/types": "workspace:*",
+      },
     },
     "packages/config": {
       "name": "@band-tools/config",

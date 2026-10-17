@@ -4,6 +4,7 @@
   "type": "module",
   "license": "UNLICENSED",
   "imports": {
+    "#authenticated": "./src/authenticated.ts",
     "#db": "./src/db.ts",
     "#paths": "./src/paths.ts"
   },

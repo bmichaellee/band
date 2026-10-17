@@ -10,6 +10,8 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 interface DevApp {
   /** Workspace directory whose `dev` script starts the server. */
   dir: string;
+  /** Port the server listens on; anything already on it is stopped first. */
+  port: number;
   /** Answers once the server is ready. */
   readyUrl: string;
   /** Page to open in the browser. */
@@ -17,13 +19,21 @@ interface DevApp {
 }
 
 // Keep the default ports in step with the PWA's Vite config and serverConfig.
-const pwaOrigin = `http://localhost:${process.env.PWA_PORT ?? 47391}`;
-const apiOrigin = `http://localhost:${process.env.API_PORT ?? 47392}`;
+const pwaPort = Number(process.env.PWA_PORT ?? 47391);
+const apiPort = Number(process.env.API_PORT ?? 47392);
+const pwaOrigin = `http://localhost:${pwaPort}`;
+const apiOrigin = `http://localhost:${apiPort}`;
 
 const apps: Record<string, DevApp> = {
-  pwa: { dir: "apps/pwa", readyUrl: `${pwaOrigin}/`, openUrl: `${pwaOrigin}/` },
+  pwa: {
+    dir: "apps/pwa",
+    port: pwaPort,
+    readyUrl: `${pwaOrigin}/`,
+    openUrl: `${pwaOrigin}/`,
+  },
   api: {
     dir: "apps/api",
+    port: apiPort,
     // Keep in step with the API's health route and docs path.
     readyUrl: `${apiOrigin}/api/v0/health`,
     openUrl: `${apiOrigin}/api/docs`,
@@ -48,27 +58,63 @@ for (const signal of ["SIGINT", "SIGTERM"] as const)
 
 await Promise.all(names.map((name) => start(name, apps[name])));
 
-// Nothing new was started: everything was already running.
-if (children.length === 0) process.exit(0);
-
 // If one server exits, take the rest down with it.
 const code = await Promise.race(children.map((child) => child.exited));
 stopAll();
 process.exit(code);
 
 async function start(name: string, app: DevApp): Promise<void> {
-  if (await isUp(app.readyUrl)) {
-    // Already running (e.g. in another terminal): just make sure it's open.
-    console.log(`${name} dev server already running at ${app.openUrl}`);
-  } else {
-    const child = Bun.spawn(["bun", "run", "dev"], {
-      cwd: join(root, app.dir),
-      stdio: ["inherit", "inherit", "inherit"],
-    });
-    children.push(child);
-    if (!(await waitForServer(child, app.readyUrl))) return;
-  }
+  // A leftover server (e.g. from another terminal) would answer the readiness
+  // check and keep running stale code, so it's stopped before this one starts.
+  await freePort(app.port);
+  console.log(`Starting ${name} dev server at ${app.openUrl}`);
+  const child = Bun.spawn(["bun", "run", "dev"], {
+    cwd: join(root, app.dir),
+    stdio: ["inherit", "inherit", "inherit"],
+  });
+  children.push(child);
+  if (!(await waitForServer(child, app.readyUrl))) return;
   await openInBrowser(app.openUrl, root);
+}
+
+async function freePort(port: number): Promise<void> {
+  for (const pid of listeningPids(port)) {
+    if (pid === process.pid) continue;
+    console.log(`Stopping process ${pid} on port ${port}`);
+    if (process.platform === "win32") {
+      // /T takes down the child processes too (bun --watch and vite).
+      Bun.spawnSync(["taskkill", "/PID", String(pid), "/T", "/F"]);
+    } else {
+      process.kill(pid, "SIGTERM");
+    }
+  }
+}
+
+function listeningPids(port: number): number[] {
+  if (process.platform === "win32") {
+    // Columns: proto, local address, foreign address, state, pid.
+    const out = Bun.spawnSync([
+      "netstat",
+      "-ano",
+      "-p",
+      "TCP",
+    ]).stdout.toString();
+    return out.split("\n").flatMap((line) => {
+      const cols = line.trim().split(/\s+/);
+      return cols.length === 5 &&
+        cols[3] === "LISTENING" &&
+        cols[1].endsWith(`:${port}`)
+        ? [Number(cols[4])]
+        : [];
+    });
+  }
+  const out = Bun.spawnSync([
+    "lsof",
+    "-ti",
+    `tcp:${port}`,
+    "-sTCP:LISTEN",
+  ]).stdout.toString();
+  return out.split("\n").filter(Boolean).map(Number);
 }
 
 async function isUp(target: string): Promise<boolean> {

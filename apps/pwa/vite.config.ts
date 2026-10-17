@@ -14,8 +14,13 @@ export default defineConfig(({ mode }) => {
   // Keep the prefix in step with the API's, and the default port with
   // serverConfig's.
   const apiPath = /^\/api(\/|$)/;
+  // Not the string shorthand: it turns on changeOrigin, and the API builds
+  // absolute URLs (login callbacks) from the Host header it receives.
   const proxy = {
-    [apiPath.source]: `http://localhost:${env.API_PORT ?? 47392}`,
+    [apiPath.source]: {
+      target: `http://localhost:${env.API_PORT ?? 47392}`,
+      changeOrigin: false,
+    },
   };
 
   return {
