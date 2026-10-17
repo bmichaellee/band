@@ -15,7 +15,7 @@ RUN cd apps/api && bun run build
 FROM oven/bun:${BUN_VERSION}-slim
 WORKDIR /app
 # API_PORT is the container port: keep it in step with EXPOSE, the HEALTHCHECK
-# URL and compose.yml's port mapping.
+# URL and docker/nginx.conf's upstream.
 ENV NODE_ENV=production \
     API_PORT=3000
 # The API bundle is self-contained (no node_modules). It finds the PWA at ../../pwa/dist

@@ -1,16 +1,36 @@
-# Production stack: the app (API + PWA) and its database, reachable on a single port.
+# Production stack: the app (API + PWA), Keycloak and their databases behind
+# nginx, reachable on a single port.
 #   docker compose up -d --build
-# Postgres has no published port; only the app can reach it, over the stack's private network.
+# Only nginx publishes a port. It serves the app on its host (APP_URL) and
+# Keycloak on auth.* (AUTH_URL); see docker/nginx.conf. Everything else talks
+# over the stack's private network.
 # Development doesn't use Docker: the dev servers use a local Postgres (DATABASE_URL in .env).
 
 services:
+  nginx:
+    image: nginx:1.30-alpine
+    ports:
+      - "${APP_PORT:-41837}:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    restart: unless-stopped
+
   app:
     build: .
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-band-tools}
-    ports:
-      # 3000 is the container's API_PORT (Dockerfile); keep them in step.
-      - "${APP_PORT:-41837}:3000"
+      # The realm and client are in docker/keycloak/band-tools-realm.json; keep
+      # the realm name in both URLs in step with it.
+      KEYCLOAK_ISSUER: ${AUTH_URL:-http://auth.localhost:${APP_PORT:-41837}}/realms/band-tools
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/realms/band-tools
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me}
+    # No published port: nginx proxies to the container's API_PORT, 3000
+    # (Dockerfile); keep docker/nginx.conf in step.
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,5 +53,64 @@ services:
       retries: 10
     restart: unless-stopped
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8
+    # Imports docker/keycloak/*.json only when the realm doesn't exist yet, so
+    # later edits there (or to the values it reads below) don't reach an
+    # existing keycloak-data volume.
+    command: start --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+      # Plain HTTP behind nginx, at the URL browsers use.
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: ${AUTH_URL:-http://auth.localhost:${APP_PORT:-41837}}
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      # nginx doesn't proxy the admin console: use kcadm.sh in this container,
+      # or publish port 8080 for a while.
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-change-me}
+      # Read by the realm import.
+      APP_URL: ${APP_URL:-http://localhost:${APP_PORT:-41837}}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me}
+    volumes:
+      - ./docker/keycloak:/opt/keycloak/data/import:ro
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      # The image has no curl; the health endpoint is on the management port.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"UP"' <&3
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    restart: unless-stopped
+
+  # Keycloak's own database, kept apart from the app's.
+  keycloak-db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+      POSTGRES_DB: keycloak
+    volumes:
+      - keycloak-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   postgres-data:
+  keycloak-data:

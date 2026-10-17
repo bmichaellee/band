@@ -1,4 +1,4 @@
-// Cookie and in-memory session helpers shared by the fake providers.
+// Cookie and in-memory session helpers shared by the providers.
 const SESSION_COOKIE = "session";
 // No `Secure` so it works over plain http on localhost; a real provider should set it.
 const ATTRS = "Path=/; HttpOnly; SameSite=Lax";
@@ -17,26 +17,28 @@ export function setCookie(name: string, value: string, maxAge?: number) {
 }
 
 /**
- * One provider's sessions, in memory only (lost on restart). Each provider has
- * its own store, so it only recognizes sessions it started.
+ * One provider's sessions, each holding a value (e.g. the user), in memory only
+ * (lost on restart). Each provider has its own store, so it only recognizes
+ * sessions it started.
  */
-export function createSessionStore() {
-  const tokens = new Set<string>();
+export function createSessionStore<T>() {
+  const sessions = new Map<string, T>();
   return {
-    has(request: Request): boolean {
+    /** What the request's session holds, or `undefined` when this store has none for it. */
+    get(request: Request): T | undefined {
       const token = readCookie(request, SESSION_COOKIE);
-      return token !== undefined && tokens.has(token);
+      return token === undefined ? undefined : sessions.get(token);
     },
-    /** Starts a session and returns the `set-cookie` value that carries it. */
-    start(): string {
+    /** Starts a session holding `value` and returns the `set-cookie` value that carries it. */
+    start(value: T): string {
       const token = crypto.randomUUID();
-      tokens.add(token);
+      sessions.set(token, value);
       return setCookie(SESSION_COOKIE, token);
     },
     /** Ends the request's session and returns the `set-cookie` value that clears it. */
     end(request: Request): string {
       const token = readCookie(request, SESSION_COOKIE);
-      if (token) tokens.delete(token);
+      if (token) sessions.delete(token);
       return setCookie(SESSION_COOKIE, "", 0);
     },
   };

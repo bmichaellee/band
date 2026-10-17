@@ -35,11 +35,10 @@ function redirect(location: URL | string, cookies: string[]) {
 
 // What both fakes share: a user behind an in-memory session, and logout.
 function fakeSessions() {
-  const sessions = createSessionStore();
+  const sessions = createSessionStore<User>();
   return {
     sessions,
-    authenticate: async (request: Request) =>
-      sessions.has(request) ? FAKE_USER : null,
+    authenticate: async (request: Request) => sessions.get(request) ?? null,
     logout: async (request: Request) =>
       new Response(null, {
         status: 204,
@@ -54,7 +53,9 @@ export const fakeDirectAuth: DirectAuthProvider = (() => {
   return {
     ...shared,
     login: async () =>
-      Response.json(FAKE_USER, { headers: { "set-cookie": sessions.start() } }),
+      Response.json(FAKE_USER, {
+        headers: { "set-cookie": sessions.start(FAKE_USER) },
+      }),
   };
 })();
 
@@ -87,7 +88,10 @@ export const fakeRedirectAuth: RedirectAuthProvider = (() => {
       ) {
         return new Response("Invalid login callback", { status: 400 });
       }
-      return redirect("/", [sessions.start(), setCookie(STATE_COOKIE, "", 0)]);
+      return redirect("/", [
+        sessions.start(FAKE_USER),
+        setCookie(STATE_COOKIE, "", 0),
+      ]);
     },
   };
 })();

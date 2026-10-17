@@ -7,6 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@band-tools/config": "workspace:*",
     "@band-tools/types": "workspace:*"
   }
 }
