@@ -1,0 +1,155 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!packages/db/drizzle", "!.agents", "!.claude"]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [
+                ":URL:",
+                ":BUN:",
+                ":NODE:",
+                ":PACKAGE_WITH_PROTOCOL:",
+                ":PACKAGE:"
+              ],
+              ":BLANK_LINE:",
+              ":ALIAS:",
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noDefaultExport": "error",
+        "useConsistentTypeDefinitions": "error",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "filenameCases": ["kebab-case", "camelCase", "PascalCase"]
+          }
+        }
+      },
+      "suspicious": {
+        "noEmptyBlockStatements": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.config.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/pwa/src/components/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "#components": "Inside components/, import siblings relatively (./Foo), not from the #components barrel; it can create circular imports."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/pwa/src/contexts/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "#contexts": "Inside contexts/, import siblings relatively (./FooContext), not from the #contexts barrel; it can create circular imports."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/pwa/src/hooks/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "#hooks": "Inside hooks/, import siblings relatively (./useFoo), not from the #hooks barrel; it can create circular imports."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/pwa/src/services/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "#services": "Inside services/, import siblings relatively (./foo), not from the #services barrel; it can create circular imports."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/db/src/schema/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "#schema": "Inside schema/, import siblings relatively (./users), not from the #schema barrel; it can create circular imports."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+# Dependencies; bun.lock is committed, node_modules is not
+node_modules/
+
+# The wiki is its own repository, tracked separately
+.wiki/
+
+# Secrets and sensitive information; never committed
+.secrets/
+
+# Build output
+dist/
+
+# Local environment; .env.example is committed
+.env
+
+# Test coverage reports
+.coverage/
+
+# Claude Code's per-user settings, written through the .claude link
+.agents/settings.local.json

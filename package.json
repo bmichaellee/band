@@ -1,0 +1,34 @@
+{
+  "name": "band-tools",
+  "version": "0.1.0",
+  "description": "A suite of tools for managing bands",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "bun": ">=1.4"
+  },
+  "repository": "github:bmichaellee/band",
+  "author": "Brandon Lee <brandonmlee85@gmail.com>",
+  "license": "UNLICENSED",
+  "scripts": {
+    "check": "tsc && biome check",
+    "fix": "biome check --write",
+    "test": "bun test",
+    "prepare": "git config core.hooksPath .githooks",
+    "dev": "bun scripts/dev.ts pwa api",
+    "pwa": "bun scripts/dev.ts pwa",
+    "api": "bun scripts/dev.ts api",
+    "prod": "docker compose up -d --build",
+    "prod:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@happy-dom/global-registrator": "21.0.1",
+    "@types/bun": "1.4.3",
+    "typescript": "7.0.2"
+  }
+}

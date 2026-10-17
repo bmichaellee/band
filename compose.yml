@@ -1,0 +1,37 @@
+# Production stack: the app (API + PWA) and its database, reachable on a single port.
+#   docker compose up -d --build
+# Postgres has no published port; only the app can reach it, over the stack's private network.
+# Development doesn't use Docker: the dev servers use a local Postgres (DATABASE_URL in .env).
+
+services:
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-band-tools}
+    ports:
+      # 3000 is the container's API_PORT (Dockerfile); keep them in step.
+      - "${APP_PORT:-41837}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    # Keep the major version in step with the local dev Postgres.
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-band-tools}
+    volumes:
+      # Postgres 18+ keeps its data under /var/lib/postgresql (not .../data).
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

@@ -1,0 +1,32 @@
+{
+  "name": "@band-tools/pwa",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "imports": {
+    "#components": "./src/components/index.ts",
+    "#contexts": "./src/contexts/index.ts",
+    "#hooks": "./src/hooks/index.ts",
+    "#services": "./src/services/index.ts"
+  },
+  "dependencies": {
+    "@band-tools/config": "workspace:*",
+    "@band-tools/types": "workspace:*",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "vite": "8.3.4",
+    "vite-plugin-pwa": "2.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}

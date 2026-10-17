@@ -1,0 +1,26 @@
+{
+  "name": "@band-tools/db",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "imports": {
+    "#db": "./src/db.ts",
+    "#schema": "./src/schema/index.ts"
+  },
+  "dependencies": {
+    "@band-tools/config": "workspace:*",
+    "@band-tools/types": "workspace:*",
+    "drizzle-orm": "0.45.3",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.11"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate"
+  }
+}

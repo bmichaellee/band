@@ -1,0 +1,16 @@
+// Repo-wide editor integration only; personal preferences belong in your user settings.
+{
+  // Biome formats and lints this repo (see biome.json); keep the editor in step with `bun run check`.
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "workbench.browser.enableChatTools": true,
+  "workbench.browser.openLocalhostLinks": true,
+  "integratedBrowserMcp.autoStart": true,
+  "integratedBrowserMcp.allowAllExistingTabs": true,
+  // Coverage Gutters reads the report `bun test` writes (see bunfig.toml).
+  "coverage-gutters.coverageBaseDir": ".coverage",
+  "coverage-gutters.coverageFileNames": ["lcov.info"]
+}

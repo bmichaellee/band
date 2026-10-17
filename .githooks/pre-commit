@@ -1,0 +1,23 @@
+#!/bin/sh
+# Formats staged files and applies Biome's safe fixes, then re-stages them.
+# The commit is blocked if anything is left that Biome can't fix itself.
+# Installed by `bun install` (the root "prepare" script points core.hooksPath here).
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+biome="bun x biome check --staged --no-errors-on-unmatched --files-ignore-unknown=true"
+
+# Biome works on the working-tree copy, so fixing a partially staged file and re-adding it
+# would sweep its unstaged changes into the commit. In that case only check, don't fix.
+partial=$( { printf '%s\n' "$staged"; git diff --name-only; } | sort | uniq -d )
+if [ -n "$partial" ]; then
+  echo "pre-commit: some files have unstaged changes, so checking without auto-fixing:"
+  echo "$partial" | sed 's/^/  /'
+  $biome && exit 0
+  echo "pre-commit: run 'bun run fix', re-stage, and commit again."
+  exit 1
+fi
+
+$biome --write || exit 1
+git diff --cached --name-only -z --diff-filter=ACMR | xargs -0 git add --

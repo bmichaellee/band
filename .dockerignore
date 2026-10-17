@@ -1,0 +1,14 @@
+# Keep the build context to source only; dependencies and builds are made inside the image.
+**/node_modules
+**/dist
+.coverage
+.git
+.githooks
+.vscode
+.env
+.secrets
+.wiki
+.agents
+.claude
+Dockerfile
+compose*.yml

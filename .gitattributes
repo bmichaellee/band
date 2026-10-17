@@ -1,0 +1,3 @@
+# LF everywhere, whatever core.autocrlf says: Biome rejects CRLF and the hook
+# is a shell script.
+* text=auto eol=lf

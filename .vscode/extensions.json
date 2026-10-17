@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "biomejs.biome",
+    "ryanluker.vscode-coverage-gutters",
+    "thimo.integrated-browser-mcp"
+  ],
+  "unwantedRecommendations": ["esbenp.prettier-vscode"]
+}

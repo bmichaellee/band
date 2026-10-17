@@ -1,0 +1,14 @@
+preload = ["./scripts/preload.ts"]
+
+[install]
+# `bun add` pins exact versions instead of ^ ranges.
+exact = true
+
+[test]
+preload = ["./scripts/preload.ts", "./scripts/test-setup.ts"]
+# Writes coverage to .coverage/lcov.info. Only files a test loads are
+# measured; untested modules are missing from the report, not at 0%.
+coverage = true
+coverageReporter = ["text", "lcov"]
+coverageDir = ".coverage"
+coverageSkipTestFiles = true
