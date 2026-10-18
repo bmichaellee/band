@@ -1,9 +1,9 @@
 # Production stack: the app (API + PWA), Keycloak and their databases behind
 # nginx, reachable on a single port.
 #   docker compose up -d --build
-# Only nginx publishes a port. It serves the app on its host (APP_URL) and
-# Keycloak on auth.* (AUTH_URL); see docker/nginx.conf. Everything else talks
-# over the stack's private network.
+# Only nginx publishes a port. It serves the app at APP_URL and Keycloak under
+# its /auth path; see docker/nginx.conf. Everything else talks over the stack's
+# private network.
 # Development doesn't use Docker: the dev servers use a local Postgres (DATABASE_URL in .env).
 
 services:
@@ -25,9 +25,10 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-band-tools}
       # The realm and client are in docker/keycloak/band-tools-realm.json; keep
-      # the realm name in both URLs in step with it.
-      KEYCLOAK_ISSUER: ${AUTH_URL:-http://auth.localhost:${APP_PORT:-41837}}/realms/band-tools
-      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/realms/band-tools
+      # the realm name in both URLs in step with it, and /auth with Keycloak's
+      # KC_HTTP_RELATIVE_PATH.
+      KEYCLOAK_ISSUER: ${APP_URL:-http://localhost:${APP_PORT:-41837}}/auth/realms/band-tools
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/auth/realms/band-tools
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me}
     # No published port: nginx proxies to the container's API_PORT, 3000
     # (Dockerfile); keep docker/nginx.conf in step.
@@ -64,9 +65,11 @@ services:
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
-      # Plain HTTP behind nginx, at the URL browsers use.
+      # Plain HTTP behind nginx, under /auth on the app's origin (the path
+      # docker/nginx.conf routes here).
       KC_HTTP_ENABLED: "true"
-      KC_HOSTNAME: ${AUTH_URL:-http://auth.localhost:${APP_PORT:-41837}}
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HOSTNAME: ${APP_URL:-http://localhost:${APP_PORT:-41837}}/auth
       KC_PROXY_HEADERS: xforwarded
       KC_HEALTH_ENABLED: "true"
       # nginx doesn't proxy the admin console: use kcadm.sh in this container,
@@ -82,12 +85,13 @@ services:
       keycloak-db:
         condition: service_healthy
     healthcheck:
-      # The image has no curl; the health endpoint is on the management port.
+      # The image has no curl; the health endpoint is on the management port,
+      # which takes the same relative path.
       test:
         - CMD-SHELL
         - >-
           exec 3<>/dev/tcp/127.0.0.1/9000 &&
-          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          printf 'GET /auth/health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
           grep -q '"UP"' <&3
       interval: 10s
       timeout: 5s

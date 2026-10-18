@@ -40,8 +40,9 @@ export default defineConfig(({ mode }) => {
           theme_color: "#ffffff",
         },
         // Don't let the service worker answer /api navigations (e.g. /api/docs)
-        // with the app shell.
-        workbox: { navigateFallbackDenylist: [apiPath] },
+        // or Keycloak's login pages with the app shell. Keep /auth in step
+        // with docker/nginx.conf.
+        workbox: { navigateFallbackDenylist: [apiPath, /^\/auth(\/|$)/] },
       }),
     ],
     server: { port, strictPort: true, proxy },

@@ -4,7 +4,7 @@ import type { RedirectAuthProvider } from "../auth";
 import { createSessionStore, readCookie, setCookie } from "../sessions";
 
 export interface KeycloakConfig {
-  /** The realm's URL as browsers reach it, e.g. `https://auth.example.com/realms/band-tools`. */
+  /** The realm's URL as browsers reach it, e.g. `https://example.com/auth/realms/band-tools`. */
   issuer: string;
   /** The same realm as this server reaches it; may differ from `issuer` (e.g. inside a container network). */
   internalUrl: string;
